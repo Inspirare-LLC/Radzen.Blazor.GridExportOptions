@@ -24,6 +24,8 @@ Use the control like so:
 
 Button size, style, css style can all be customized through parameters.
 
+By default it looks for radzen table with class `rz-datatable`. Pass in `GridId` parameter to look for the radzen table by css id.
+
 # Contributions
 
 Any contributions are welcome in the form of pull requests.
