@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Authors>Jonas Petraška, Inspirare, UAB</Authors>
+    <Company>Inspirare, UAB</Company>
+    <Product />
+    <Description>Radzen blazor grid export options</Description>
+    <PackageProjectUrl>https://github.com/Inspirare-LLC/Radzen.Blazor.GridExportOptions</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Inspirare-LLC/Radzen.Blazor.GridExportOptions</RepositoryUrl>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components" Version="3.1.15" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="3.1.15" />
+    <PackageReference Include="Radzen.Blazor" Version="3.3.2" />
+  </ItemGroup>
+
+</Project>

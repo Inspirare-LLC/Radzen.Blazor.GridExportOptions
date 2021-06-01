@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31313.79
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Radzen.Blazor.GridExportOptions", "Radzen.Blazor.GridExportOptions.csproj", "{D572DF94-E399-433D-8DB2-CF88C07CB013}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D572DF94-E399-433D-8DB2-CF88C07CB013}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D572DF94-E399-433D-8DB2-CF88C07CB013}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D572DF94-E399-433D-8DB2-CF88C07CB013}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D572DF94-E399-433D-8DB2-CF88C07CB013}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F21383F5-96FD-4532-95A8-1DEC9DEA8289}
+	EndGlobalSection
+EndGlobal
