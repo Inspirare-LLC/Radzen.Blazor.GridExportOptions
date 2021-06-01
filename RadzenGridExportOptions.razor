@@ -1,0 +1,30 @@
+﻿@typeparam T
+
+@inject IJSRuntime _jsRuntime
+
+<RadzenButton Text="@CSVTitle" Click="@(() => ExportToCSV())" Style="@CSVButtonCssStyle" ButtonStyle="@CSVButtonStyle" Size="@CSVButtonSize"/>
+
+@code{
+    [Parameter]
+    public RadzenGrid<T> Grid { get; set; }
+
+    [Parameter]
+    public string GridId { get; set; }
+
+    [Parameter]
+    public string CSVTitle { get; set; } = "To CSV";
+
+    [Parameter]
+    public string CSVButtonCssStyle { get; set; }
+
+    [Parameter]
+    public Radzen.ButtonStyle CSVButtonStyle { get; set; } = ButtonStyle.Secondary;
+
+    [Parameter]
+    public Radzen.ButtonSize CSVButtonSize { get; set; } = ButtonSize.Medium;
+
+    async void ExportToCSV()
+    {
+        await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToCSV", GridId);
+    }
+}
