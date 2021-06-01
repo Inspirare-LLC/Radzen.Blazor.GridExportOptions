@@ -22,7 +22,7 @@ Use the control like so:
       RadzenGrid<TItem> grid;
     }
 
-Button size, style, css style can all be customized.
+Button size, style, css style can all be customized through parameters.
 
 # Contributions
 
