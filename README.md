@@ -5,6 +5,10 @@ Exports radzen blazor grid content into different formats.
 
 Currenty only CSV available.
 
+# Breaking change
+
+From version 2.0.0.0 `RadzenGrid` has been replaced with `RadzenDataGrid`.
+
 # Nuget package
 Available as nuget package at https://www.nuget.org/packages/Radzen.Blazor.GridExportOptions/
 Install it in shared code project.
@@ -16,10 +20,10 @@ Include `<script src="~/_content/radzen.blazor.gridexportoptions/radzen-grid-exp
 Use the control like so:
 
     <RadzenGridExportOptions Grid="@grid"/>
-    <RadzenGrid @ref="@grid"/>
+    <RadzenDataGrid @ref="@grid"/>
 
     @code{
-      RadzenGrid<TItem> grid;
+      RadzenDataGrid<TItem> grid;
     }
 
 Button size, style, css style can all be customized through parameters.
