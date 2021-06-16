@@ -3,7 +3,7 @@
 
 		let table = undefined;
 		if (elementId === undefined || elementId === "" || elementId === null)
-			table = $(".rz-datatable").first();
+			table = $(".rz-data-grid").first();
 		else
 			table = $("#" + elementId);
 
@@ -18,8 +18,11 @@
 		csvContent += headerRow + "\r\n";
 
 		data.forEach(function (rowArray) {
-			let row = rowArray.join(";");
-			csvContent += row + "\r\n";
+
+			if (rowArray.length > 0) {
+				let row = rowArray.join(";");
+				csvContent += row + "\r\n";
+			}
 		});
 
 		var link = window.document.createElement("a");
@@ -28,10 +31,8 @@
 		link.click();
 	},
 	collectHeaders: function (tableRef) {
-		var tableHeader = $(".rz-datatable-scrollable-header", tableRef);
-
 		//Collect header columns
-		var tableHeaderTable = $("table", tableHeader);
+		var tableHeaderTable = $("table", tableRef);
 		var ths = $("thead>tr>th", tableHeaderTable);
 
 		var headers = [];
@@ -47,11 +48,9 @@
 		return headers;
 	},
 	collectData: function (tableRef) {
-		var tableBody = $(".rz-datatable-scrollable-body", tableRef);
-
 		//Collect data
 		var data = [];
-		var tableBodyTable = $("table", tableBody);
+		var tableBodyTable = $("table", tableRef);
 		var trs = $("tbody>tr", tableBodyTable);
 
 		trs.each(function (index, element) {
