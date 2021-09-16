@@ -12,21 +12,21 @@
 
 		//Collect data
 		var data = RadzenGridExport.collectData(table);
-		let csvContent = "";
+		let csvContent = "sep=|" + "\r\n";
 
-		let headerRow = headers.join(";");
+		let headerRow = headers.join('|');
 		csvContent += headerRow + "\r\n";
 
 		data.forEach(function (rowArray) {
 
 			if (rowArray.length > 0) {
-				let row = rowArray.join(";");
+				let row = rowArray.join('|');
 				csvContent += row + "\r\n";
 			}
 		});
 
 		var link = window.document.createElement("a");
-		link.setAttribute("href", "data:text/csv;charset=utf-8,%EF%BB%BF" + encodeURI(csvContent));
+		link.setAttribute("href", "data:text/csv;charset=utf-8,\uFEFF" + encodeURI(csvContent));
 		link.setAttribute("download", "export.csv");
 		link.click();
 	},

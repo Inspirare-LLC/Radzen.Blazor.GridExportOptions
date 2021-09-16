@@ -12,8 +12,9 @@
     <PackageProjectUrl>https://github.com/Inspirare-LLC/Radzen.Blazor.GridExportOptions</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Inspirare-LLC/Radzen.Blazor.GridExportOptions</RepositoryUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>2.1.0.0</Version>
-    <AssemblyVersion>2.1.0.0</AssemblyVersion>
+    <Version>2.7.0.0</Version>
+    <AssemblyVersion>2.7.0.0</AssemblyVersion>
+    <FileVersion>2.7.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
