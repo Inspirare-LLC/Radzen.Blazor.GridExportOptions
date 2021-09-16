@@ -11,7 +11,7 @@
 		var headers = RadzenGridExport.collectHeaders(table, true);
 
 		//Collect data
-		var data = RadzenGridExport.collectData(table, true);
+		var data = RadzenGridExport.collectData(table, true, false);
 		let csvContent = "sep=|" + "\r\n";
 
 		let headerRow = headers.join('|');
@@ -32,6 +32,37 @@
 		link.setAttribute("download", "export.csv");
 		link.click();
 	},
+	exportToExcel: function (elementId) {
+		let table = undefined;
+		if (elementId === undefined || elementId === "" || elementId === null)
+			table = $(".rz-data-grid").first();
+		else
+			table = $("#" + elementId);
+
+		//Collect header columns
+		var headers = RadzenGridExport.collectHeaders(table, false);
+
+		//Collect data
+		var data = RadzenGridExport.collectData(table, false, true);
+		data = data.filter(x => x.filter(y => y === "").length !== x.length);
+
+		data.unshift(headers);
+
+		var wb = XLSX.utils.book_new();
+		wb.SheetNames.push("Export");
+
+		var ws = XLSX.utils.aoa_to_sheet(data);
+		wb.Sheets["Export"] = ws;
+
+		var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+		var wDownload = s2ab(wbout);
+		var blob = new Blob([wDownload], { type: "application/octet-stream" });
+
+		var link = window.document.createElement("a");
+		link.setAttribute("href", window.URL.createObjectURL(blob));
+		link.setAttribute("download", "export.xlsx");
+		link.click();
+	},
 	collectHeaders: function (tableRef, quoted) {
 		//Collect header columns
 		var tableHeaderTable = $("table", tableRef);
@@ -49,7 +80,7 @@
 
 		return headers;
 	},
-	collectData: function (tableRef, quoted) {
+	collectData: function (tableRef, quoted, ignoreNumbers) {
 		//Collect data
 		var data = [];
 		var tableBodyTable = $("table", tableRef);
@@ -61,7 +92,7 @@
 
 			tds.each(function (index1, element1) {
 				var jqueryElement = $(element1);
-				var isNumber = jqueryElement.hasClass("radzen-blazor-gridexportoptions-column-number");
+				var isNumber = ignoreNumbers === true ? false : jqueryElement.hasClass("radzen-blazor-gridexportoptions-column-number");
 				var text = $(".rz-cell-data", jqueryElement).first().text().trim();
 
 				if (text != undefined)
@@ -74,3 +105,10 @@
 		return data;
 	}
 };
+
+function s2ab(s) {
+	var buf = new ArrayBuffer(s.length); //convert s to arrayBuffer
+	var view = new Uint8Array(buf);  //create uint8array as viewer
+	for (var i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF; //convert to octet
+	return buf;
+}

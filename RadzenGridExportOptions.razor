@@ -2,7 +2,15 @@
 
 @inject IJSRuntime _jsRuntime
 
-<RadzenButton Text="@CSVTitle" Click="@(() => ExportToCSV())" Style="@CSVButtonCssStyle" ButtonStyle="@CSVButtonStyle" Size="@CSVButtonSize"/>
+@if (CsvExport)
+{
+    <RadzenButton Text="@CSVTitle" Click="@(() => ExportToCSV())" Style="@CSVButtonCssStyle" ButtonStyle="@CSVButtonStyle" Size="@CSVButtonSize"/>
+}
+
+@if (ExcelExport)
+{
+    <RadzenButton Text="@ExcelTitle" Click="@(() => ExportToExcel())" Style="@ExcelButtonCssStyle" ButtonStyle="@ExcelButtonStyle" Size="@ExcelButtonSize" />
+}
 
 @code{
     [Parameter]
@@ -23,8 +31,31 @@
     [Parameter]
     public Radzen.ButtonSize CSVButtonSize { get; set; } = ButtonSize.Medium;
 
+    [Parameter]
+    public string ExcelTitle { get; set; } = "To Excel";
+
+    [Parameter]
+    public string ExcelButtonCssStyle { get; set; }
+
+    [Parameter]
+    public Radzen.ButtonStyle ExcelButtonStyle { get; set; } = ButtonStyle.Secondary;
+
+    [Parameter]
+    public Radzen.ButtonSize ExcelButtonSize { get; set; } = ButtonSize.Medium;
+
+    [Parameter]
+    public bool CsvExport { get; set; } = true;
+
+    [Parameter]
+    public bool ExcelExport { get; set; } = true;
+
     async void ExportToCSV()
     {
         await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToCSV", GridId);
+    }
+
+    async void ExportToExcel()
+    {
+        await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToExcel", GridId);
     }
 }
