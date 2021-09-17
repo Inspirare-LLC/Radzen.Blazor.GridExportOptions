@@ -46,12 +46,14 @@
 		var data = RadzenGridExport.collectData(table, false, true);
 		data = data.filter(x => x.filter(y => y === "").length !== x.length);
 
+		//Add headers to data
 		data.unshift(headers);
 
 		var wb = XLSX.utils.book_new();
 		wb.SheetNames.push("Export");
 
 		var ws = XLSX.utils.aoa_to_sheet(data);
+		ws['!autofilter'] = { ref: "A1:XX1" };
 		wb.Sheets["Export"] = ws;
 
 		var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
