@@ -43,27 +43,40 @@
 		var headers = RadzenGridExport.collectHeaders(table, false);
 
 		//Collect data
-		var data = RadzenGridExport.collectData(table, false, true);
+		var types = [];
+		var data = RadzenGridExport.collectData(table, false, true, types);
 		data = data.filter(x => x.filter(y => y === "").length !== x.length);
+
+		console.log(JSON.stringify(data));
+
+		var dataCount = data.length;
 
 		//Add headers to data
 		data.unshift(headers);
 
-		var wb = XLSX.utils.book_new();
-		wb.SheetNames.push("Export");
-
 		var ws = XLSX.utils.aoa_to_sheet(data);
 		ws['!autofilter'] = { ref: "A1:XX1" };
-		wb.Sheets["Export"] = ws;
 
-		var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
-		var wDownload = s2ab(wbout);
-		var blob = new Blob([wDownload], { type: "application/octet-stream" });
+		//Update column types
+		types.forEach(function (item, index) {
+			for (var r = 1; r <= dataCount + 1; r++) {
+				var cellRef = XLSX.utils.encode_cell({ c: index, r: r });
+				var cell = ws[cellRef];
+				if (!cell)
+					continue;
 
-		var link = window.document.createElement("a");
-		link.setAttribute("href", window.URL.createObjectURL(blob));
-		link.setAttribute("download", "export.xlsx");
-		link.click();
+				if (item === "number")
+					cell.z = '0.00';
+				//TODO: figure out the type
+				//else if (item === "date")
+				//	cell.t = 'd';
+			}
+		});
+
+		var wb = XLSX.utils.book_new();
+		XLSX.utils.book_append_sheet(wb, ws, "Export");
+
+		XLSX.writeFile(wb, 'export.xlsx', { bookType: 'xlsx', type: 'array' })
 	},
 	collectHeaders: function (tableRef, quoted) {
 		//Collect header columns
@@ -82,27 +95,37 @@
 
 		return headers;
 	},
-	collectData: function (tableRef, quoted, ignoreNumbers) {
+	collectData: function (tableRef, quoted, ignoreNumbers, types) {
 		//Collect data
 		var data = [];
 		var tableBodyTable = $("table", tableRef);
 		var trs = $("tbody>tr", tableBodyTable);
+		var allTypes = [];
 
 		trs.each(function (index, element) {
 			var tds = $(element).find("td");
 			var row = [];
+			var localTypes = [];
 
 			tds.each(function (index1, element1) {
 				var jqueryElement = $(element1);
 				var isNumber = ignoreNumbers === true ? false : jqueryElement.hasClass("radzen-blazor-gridexportoptions-column-number");
 				var text = $(".rz-cell-data", jqueryElement).first().text().trim();
+				var type = getType(text);
+				localTypes.push(type);
 
-				if (text != undefined)
-					row.push(quoted === true ? (isNumber === true && text != "" ? "="+"\""+text+"\"" : "\""+text+"\"") : (isNumber === true && text != "" ? "="+text : text));
+				if (text != undefined) {
+					var numberParse = type === "number" ? parseFloat(text.replace(",", ".")) : null;
+					row.push(quoted === true ? (isNumber === true && text != "" ? "=" + "\"" + text + "\"" : "\"" + text + "\"") : (isNumber === true && text != "" ? "=" + text : (numberParse != null ? numberParse : text)));
+				}
 			});
 
 			data.push(row);
+			allTypes = localTypes;
 		});
+
+		if (types)
+			types.push.apply(types, allTypes);
 
 		return data;
 	}
@@ -113,4 +136,19 @@ function s2ab(s) {
 	var view = new Uint8Array(buf);  //create uint8array as viewer
 	for (var i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF; //convert to octet
 	return buf;
+}
+
+function getType(str) {
+	var numberRegex = new RegExp(/^-?[0-9]+((,|\.)\d+)?$/);
+	var isNumber = numberRegex.test(str);
+	if (isNumber)
+		return "number";
+
+	//TODO: fix or replace
+	var dateRegex = new RegExp(/^(([0-9][0-9][0-9][0-9])-((0[1-9])|(1[0-2])|[0-9])-([0-3][0-9]))|(([0-3][0-9])\.((0[1-9])|(1[0-2])|[0-9])\.([0-9][0-9][0-9][0-9]))|(((0[1-9])|(1[0-2])|[0-9])\/([0-3][0-9])\/([0-9][0-9][0-9][0-9]))$/);
+	var isDate = dateRegex.test(str);
+	if (isDate)
+		return "date";
+
+	return "string";
 }
