@@ -15,6 +15,8 @@ Install it in shared code project.
 
 # Usage
 
+Include jQuery in `_Host.cshtml` file, if it isn't already included in your project.
+
 Include `<script src="~/_content/radzen.blazor.gridexportoptions/radzen-grid-export-options.js"></script>` in `_Host.cshtml` file.
 
 To use excel export include `<script src="~/_content/radzen.blazor.gridexportoptions/xlsx.full.min.js"></script>` in `_Host.cshtml` file.
