@@ -1,5 +1,5 @@
 ﻿window.RadzenGridExport = {
-	exportToCSV: function (elementId) {
+	exportToCSV: function (elementId, notExportableClass) {
 
 		let table = undefined;
 		if (elementId === undefined || elementId === "" || elementId === null)
@@ -8,10 +8,10 @@
 			table = $("#" + elementId);
 
 		//Collect header columns
-		var headers = RadzenGridExport.collectHeaders(table, true);
+		var headers = RadzenGridExport.collectHeaders(table, true, notExportableClass);
 
 		//Collect data
-		var data = RadzenGridExport.collectData(table, true, false);
+		var data = RadzenGridExport.collectData(table, true, false, notExportableClass);
 		let csvContent = "sep=|" + "\r\n";
 
 		let headerRow = headers.join('|');
@@ -32,7 +32,7 @@
 		link.setAttribute("download", "export.csv");
 		link.click();
 	},
-	exportToExcel: function (elementId) {
+	exportToExcel: function (elementId, notExportableClass) {
 		let table = undefined;
 		if (elementId === undefined || elementId === "" || elementId === null)
 			table = $(".rz-data-grid").first();
@@ -40,14 +40,12 @@
 			table = $("#" + elementId);
 
 		//Collect header columns
-		var headers = RadzenGridExport.collectHeaders(table, false);
+		var headers = RadzenGridExport.collectHeaders(table, false, notExportableClass);
 
 		//Collect data
 		var types = [];
-		var data = RadzenGridExport.collectData(table, false, true, types);
+		var data = RadzenGridExport.collectData(table, false, true, notExportableClass, types);
 		data = data.filter(x => x.filter(y => y === "").length !== x.length);
-
-		console.log(JSON.stringify(data));
 
 		var dataCount = data.length;
 
@@ -67,9 +65,8 @@
 
 				if (item === "number")
 					cell.z = '0.00';
-				//TODO: figure out the type
-				//else if (item === "date")
-				//	cell.t = 'd';
+				else if (item === "date")
+					cell.t = 'd';
 			}
 		});
 
@@ -78,7 +75,7 @@
 
 		XLSX.writeFile(wb, 'export.xlsx', { bookType: 'xlsx', type: 'array' })
 	},
-	collectHeaders: function (tableRef, quoted) {
+	collectHeaders: function (tableRef, quoted, notExportableClass) {
 		//Collect header columns
 		var tableHeaderTable = $("table", tableRef);
 		var ths = $("thead>tr>th", tableHeaderTable);
@@ -87,15 +84,19 @@
 
 		ths.each(function (index, element) {
 			var jqueryElement = $(element);
-			var title = $(".rz-column-title", jqueryElement).first().text().trim();
 
+			//If column is marked as non exportable, skip it.
+			if (notExportableClass && jqueryElement.hasClass(notExportableClass))
+				return;
+
+			var title = $(".rz-column-title", jqueryElement).first().text().trim();
 			if (title != undefined && title != "")
 				headers.push(quoted === true ? "\""+title + "\"" : title);
 		});
 
 		return headers;
 	},
-	collectData: function (tableRef, quoted, ignoreNumbers, types) {
+	collectData: function (tableRef, quoted, ignoreNumbers, notExportableClass, types) {
 		//Collect data
 		var data = [];
 		var tableBodyTable = $("table", tableRef);
@@ -109,6 +110,11 @@
 
 			tds.each(function (index1, element1) {
 				var jqueryElement = $(element1);
+
+				//If column is marked as non exportable, skip it.
+				if (notExportableClass && jqueryElement.hasClass(notExportableClass))
+					return;
+
 				var isNumber = ignoreNumbers === true ? false : jqueryElement.hasClass("radzen-blazor-gridexportoptions-column-number");
 				var text = $(".rz-cell-data", jqueryElement).first().text().trim();
 				var type = getType(text);
@@ -144,7 +150,7 @@ function getType(str) {
 	if (isNumber)
 		return "number";
 
-	//TODO: fix or replace
+	//TODO: replace with a better one
 	var dateRegex = new RegExp(/^(([0-9][0-9][0-9][0-9])-((0[1-9])|(1[0-2])|[0-9])-([0-3][0-9]))|(([0-3][0-9])\.((0[1-9])|(1[0-2])|[0-9])\.([0-9][0-9][0-9][0-9]))|(((0[1-9])|(1[0-2])|[0-9])\/([0-3][0-9])\/([0-9][0-9][0-9][0-9]))$/);
 	var isDate = dateRegex.test(str);
 	if (isDate)

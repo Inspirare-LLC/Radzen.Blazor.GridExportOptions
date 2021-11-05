@@ -49,13 +49,16 @@
     [Parameter]
     public bool ExcelExport { get; set; } = true;
 
+    [Parameter]
+    public string NotExportableClass { get; set; }
+
     async void ExportToCSV()
     {
-        await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToCSV", GridId);
+        await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToCSV", GridId, NotExportableClass);
     }
 
     async void ExportToExcel()
     {
-        await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToExcel", GridId);
+        await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToExcel", GridId, NotExportableClass);
     }
 }
