@@ -49,16 +49,16 @@ Usage sample:
 
 Usage sample:
 ```
-    <RadzenGridExportOptions Grid="@grid" NotExportableClass="exclude-from-radzen-export"/>
-    <RadzenDataGrid @ref="@grid">
-        <Columns>
-            <RadzenDataGridColumn TItem="Person" Property="FirstName" Title="First Name" CssClass="exclude-from-radzen-export" HeaderCssClass="exclude-from-radzen-export" />
-        </Columns>
-    </RadzenDataGrid>
+<RadzenGridExportOptions Grid="@grid" NotExportableClass="exclude-from-radzen-export"/>
+<RadzenDataGrid @ref="@grid">
+    <Columns>
+        <RadzenDataGridColumn TItem="Person" Property="FirstName" Title="First Name" CssClass="exclude-from-radzen-export" HeaderCssClass="exclude-from-radzen-export" />
+    </Columns>
+</RadzenDataGrid>
 
-    @code{
-      RadzenDataGrid<TItem> grid;
-    }
+@code{
+  RadzenDataGrid<TItem> grid;
+}
 ```
 
 # Contributions
