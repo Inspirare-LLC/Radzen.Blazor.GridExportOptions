@@ -117,7 +117,7 @@
 
 				var isNumber = ignoreNumbers === true ? false : jqueryElement.hasClass("radzen-blazor-gridexportoptions-column-number");
 				var text = $(".rz-cell-data", jqueryElement).first().text().trim();
-				var type = getType(text);
+				var type = jqueryElement.hasClass("radzen-blazor-gridexportoptions-column-number") ? "string" : getType(text);
 				localTypes.push(type);
 
 				if (text != undefined) {
