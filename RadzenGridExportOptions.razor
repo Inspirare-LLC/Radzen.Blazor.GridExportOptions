@@ -52,6 +52,10 @@
     [Parameter]
     public string NotExportableClass { get; set; }
 
+    //Default format is ISO format
+    [Parameter]
+    public string DateTimeFormat { get; set; } = "yyyy-MM-dd";
+
     async void ExportToCSV()
     {
         await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToCSV", GridId, NotExportableClass);
@@ -59,6 +63,6 @@
 
     async void ExportToExcel()
     {
-        await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToExcel", GridId, NotExportableClass);
+        await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToExcel", GridId, NotExportableClass, DateTimeFormat);
     }
 }

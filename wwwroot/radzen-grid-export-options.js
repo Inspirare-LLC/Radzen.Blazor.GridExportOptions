@@ -11,7 +11,7 @@
 		var headers = RadzenGridExport.collectHeaders(table, true, notExportableClass);
 
 		//Collect data
-		var data = RadzenGridExport.collectData(table, true, false, notExportableClass);
+		var data = RadzenGridExport.collectData(table, true, false, notExportableClass, false);
 		let csvContent = "sep=|" + "\r\n";
 
 		let headerRow = headers.join('|');
@@ -32,7 +32,7 @@
 		link.setAttribute("download", "export.csv");
 		link.click();
 	},
-	exportToExcel: function (elementId, notExportableClass) {
+	exportToExcel: function (elementId, notExportableClass, dateFormat) {
 		let table = undefined;
 		if (elementId === undefined || elementId === "" || elementId === null)
 			table = $(".rz-data-grid").first();
@@ -44,7 +44,7 @@
 
 		//Collect data
 		var types = [];
-		var data = RadzenGridExport.collectData(table, false, true, notExportableClass, types);
+		var data = RadzenGridExport.collectData(table, false, true, notExportableClass, true, dateFormat, types);
 		data = data.filter(x => x.filter(y => y === "").length !== x.length);
 
 		var dataCount = data.length;
@@ -67,6 +67,7 @@
 					cell.z = '0.00';
 				else if (item === "date")
 					cell.t = 'd';
+				
 			}
 		});
 
@@ -96,7 +97,7 @@
 
 		return headers;
 	},
-	collectData: function (tableRef, quoted, ignoreNumbers, notExportableClass, types) {
+	collectData: function (tableRef, quoted, ignoreNumbers, notExportableClass, isExcel, dateFormat, types) {
 		//Collect data
 		var data = [];
 		var tableBodyTable = $("table", tableRef);
@@ -121,8 +122,13 @@
 				localTypes.push(type);
 
 				if (text != undefined) {
-					var numberParse = type === "number" ? parseFloat(text.replace(",", ".")) : null;
-					row.push(quoted === true ? (isNumber === true && text != "" ? "=" + "\"" + text + "\"" : "\"" + text + "\"") : (isNumber === true && text != "" ? "=" + text : (numberParse != null ? numberParse : text)));
+					if (type === "date" && isExcel && dateFormat) {
+						var date = luxon.DateTime.fromFormat(text, dateFormat);
+						row.push(date.toISO());
+					} else {
+						var numberParse = type === "number" ? parseFloat(text.replace(",", ".")) : null;
+						row.push(quoted === true ? (isNumber === true && text != "" ? "=" + "\"" + text + "\"" : "\"" + text + "\"") : (isNumber === true && text != "" ? "=" + text : (numberParse != null ? numberParse : text)));
+					}
 				}
 			});
 
@@ -136,13 +142,6 @@
 		return data;
 	}
 };
-
-function s2ab(s) {
-	var buf = new ArrayBuffer(s.length); //convert s to arrayBuffer
-	var view = new Uint8Array(buf);  //create uint8array as viewer
-	for (var i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF; //convert to octet
-	return buf;
-}
 
 function getType(str) {
 	var numberRegex = new RegExp(/^-?[0-9]+((,|\.)\d+)?$/);
