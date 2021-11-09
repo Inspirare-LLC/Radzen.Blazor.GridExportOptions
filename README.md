@@ -24,6 +24,8 @@ Include `<script src="~/_content/radzen.blazor.gridexportoptions/radzen-grid-exp
 
 To use excel export include `<script src="~/_content/radzen.blazor.gridexportoptions/xlsx.full.min.js"></script>` in `_Host.cshtml` file.
 
+To use correct date recognition and formatting for excel include `<script src="~/_content/radzen.blazor.gridexportoptions/luxon.min.js"></script>` in `_Host.cshtml` file.
+
 Use the control like so:
 
     <RadzenGridExportOptions Grid="@grid"/>
@@ -60,6 +62,18 @@ Usage sample:
   RadzenDataGrid<TItem> grid;
 }
 ```
+
+**In order for excel export to correctly recognize and convert dates, provide `DateTime` parameter, by default it's `yyyy-MM-dd`:**
+```
+<RadzenGridExportOptions Grid="@grid" DateTimeFormat="yyyy-MM-dd"/>
+<RadzenDataGrid @ref="@grid"/>
+
+@code{
+  RadzenDataGrid<TItem> grid;
+}
+```
+
+This parameter should indicate what is the input date time format (the one that is displayed in UI).
 
 # Contributions
 
