@@ -14,7 +14,6 @@ From version 2.0.0.0 `RadzenGrid` has been replaced with `RadzenDataGrid`.
 
 # Nuget package
 Available as nuget package at https://www.nuget.org/packages/Radzen.Blazor.GridExportOptions/
-Install it in shared code project.
 
 # Usage
 
