@@ -32,6 +32,26 @@
 		link.setAttribute("download", "export.csv");
 		link.click();
 	},
+	exportToCSVDataSource: function (referenceValues, referenceValueFieldNames, dataJSON, fieldNames, fieldTitles, cssClasses) {
+
+		//Compute header row
+		var header = fieldTitles.join('|');
+		let csvContent = "sep=|" + "\r\n";
+		csvContent += header + "\r\n";
+
+		//Collect data according to visible and exportable columns
+		var data = RadzenGridExport.collectDataFromDataSourceJSON(referenceValues, referenceValueFieldNames, dataJSON, fieldNames, true, undefined, false, false, cssClasses);
+		 
+		//Loop data and collect fields
+		data.forEach(function (item, index) {
+			csvContent += item.join('|') + "\r\n";
+		});
+
+		var link = window.document.createElement("a");
+		link.setAttribute("href", "data:text/csv;charset=utf-8,\uFEFF" + encodeURI(csvContent));
+		link.setAttribute("download", "export.csv");
+		link.click();
+	},
 	exportToExcel: function (elementId, notExportableClass, dateFormat) {
 		let table = undefined;
 		if (elementId === undefined || elementId === "" || elementId === null)
@@ -68,6 +88,41 @@
 				else if (item === "date")
 					cell.t = 'd';
 				
+			}
+		});
+
+		var wb = XLSX.utils.book_new();
+		XLSX.utils.book_append_sheet(wb, ws, "Export");
+
+		XLSX.writeFile(wb, 'export.xlsx', { bookType: 'xlsx', type: 'array' })
+	},
+	exportToExcelDataSource: function (referenceValues, referenceValueFieldNames, dataJSON, fieldNames, fieldTitles, dateFormat, cssClasses) {
+
+		//Collect data according to visible and exportable columns
+		var types = [];
+		var data = RadzenGridExport.collectDataFromDataSourceJSON(referenceValues, referenceValueFieldNames, dataJSON, fieldNames, false, dateFormat, true, true, cssClasses, types);
+
+		var dataCount = data.length;
+
+		//Add headers to data
+		data.unshift(fieldTitles);
+
+		var ws = XLSX.utils.aoa_to_sheet(data);
+		ws['!autofilter'] = { ref: "A1:XX1" };
+
+		//Update column types
+		types.forEach(function (item, index) {
+			for (var r = 1; r <= dataCount + 1; r++) {
+				var cellRef = XLSX.utils.encode_cell({ c: index, r: r });
+				var cell = ws[cellRef];
+				if (!cell)
+					continue;
+
+				if (item === "number")
+					cell.z = '0.00';
+				else if (item === "date")
+					cell.t = 'd';
+
 			}
 		});
 
@@ -140,6 +195,54 @@
 			types.push.apply(types, allTypes);
 
 		return data;
+	},
+	collectDataFromDataSourceJSON: function (referenceValues, referenceValueFieldNames, dataJSON, fieldNames, isQuoted, dateFormat, isExcel, ignoreNumbers, cssClasses, types) {
+		//Data is json array
+		var data = JSON.parse(dataJSON);
+		var dataRows = [];
+		var allTypes = [];
+
+		//Loop data and collect fields
+		data.forEach(function (item, index) {
+			var rowData = [];
+			var localTypes = [];
+
+			fieldNames.forEach(function (item2, index2) {
+				var fieldValue = String(item[item2]);
+				if (referenceValueFieldNames.includes(item2))
+					fieldValue = String(referenceValues.find(x => x["fieldName"] === item2 && x["fieldValue"] === fieldValue)["ref"]);
+
+				if (fieldValue === undefined ||
+					fieldValue === "null" ||
+					fieldValue === "null")
+					fieldValue = "";
+
+				if (fieldValue.includes("0001-01-01"))
+					fieldValue = "";
+
+				var thisCssClasses = cssClasses.find(x => x["key"] === item2)["value"];
+
+				var isNumber = ignoreNumbers === true ? false : thisCssClasses.includes("radzen-blazor-gridexportoptions-column-number");
+				var type = thisCssClasses.includes("radzen-blazor-gridexportoptions-column-number") ? "string" : getType(fieldValue);
+				localTypes.push(type);
+
+				if (type === "date" && isExcel && dateFormat) {
+					var date = luxon.DateTime.fromFormat(fieldValue, dateFormat);
+					rowData.push(date.toISO());
+				} else {
+					var numberParse = type === "number" ? parseFloat(fieldValue.replace(",", ".")) : null;
+					rowData.push(isQuoted === true ? (isNumber === true && fieldValue != "" ? "=" + "\"" + fieldValue + "\"" : "\"" + fieldValue + "\"") : (isNumber === true && fieldValue != "" ? "=" + fieldValue : (numberParse != null ? numberParse : fieldValue)));
+				}
+			});
+
+			dataRows.push(rowData);
+			allTypes = localTypes;
+		});
+
+		if (types)
+			types.push.apply(types, allTypes);
+
+		return dataRows;
 	}
 };
 

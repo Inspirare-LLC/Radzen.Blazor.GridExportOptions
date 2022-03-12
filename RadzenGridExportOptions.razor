@@ -1,5 +1,8 @@
 ﻿@typeparam T
 
+@using Newtonsoft.Json;
+@using Models;
+
 @inject IJSRuntime _jsRuntime
 
 @if (CsvExport)
@@ -56,13 +59,159 @@
     [Parameter]
     public string DateTimeFormat { get; set; } = "yyyy-MM-dd";
 
+    //Data source mode
+    [Parameter]
+    public bool DataSourceMode { get; set; }
+
+    [Parameter]
+    public Func<Task<IEnumerable<T>>> LoadDataAllMethod { get; set; }
+
+    [Parameter]
+    public IEnumerable<string> ReferenceValueFieldNames { get; set; }
+
+    [Parameter]
+    public Func<string, string, Task<string>> HandleReferenceValue { get; set; }
+
     async void ExportToCSV()
     {
-        await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToCSV", GridId, NotExportableClass);
+        if (DataSourceMode)
+        {
+            var data = await LoadDataAsync();
+            if (data == null)
+                return;
+
+            var visibleColumns = GetVisibleColumns();
+            var fieldsInfo = CollectFieldNames(visibleColumns);
+            var cssClasses = GetColumnClasses(visibleColumns);
+            var refValues = await ComputeReferenceValues(visibleColumns, data);
+
+            await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToCSVDataSource", refValues, ReferenceValueFieldNames, SerializeObjects(data), fieldsInfo.fieldNames, fieldsInfo.fieldTitles, cssClasses);
+        }
+        else
+        {
+            await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToCSV", GridId, NotExportableClass);
+        }
     }
 
     async void ExportToExcel()
     {
-        await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToExcel", GridId, NotExportableClass, DateTimeFormat);
+        if (DataSourceMode)
+        {
+            var data = await LoadDataAsync();
+            if (data == null)
+                return;
+
+            var visibleColumns = GetVisibleColumns();
+            var fieldsInfo = CollectFieldNames(visibleColumns);
+            var cssClasses = GetColumnClasses(visibleColumns);
+            var refValues = await ComputeReferenceValues(visibleColumns, data);
+
+            await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToExcelDataSource", refValues, ReferenceValueFieldNames, SerializeObjects(data), fieldsInfo.fieldNames, fieldsInfo.fieldTitles, DateTimeFormat, cssClasses);
+        }
+        else
+        {
+            await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToExcel", GridId, NotExportableClass, DateTimeFormat);
+        }
+
+    }
+
+    /// <summary>
+    /// Loads data from data source
+    /// </summary>
+    /// <returns></returns>
+    async Task<IEnumerable<T>> LoadDataAsync()
+    {
+        if (LoadDataAllMethod == null)
+            return null;
+
+        var data = await LoadDataAllMethod();
+        return data;
+    }
+
+    /// <summary>
+    /// Collects field names and titles from grid columns
+    /// </summary>
+    /// <returns></returns>
+    (IEnumerable<string> fieldNames, IEnumerable<string> fieldTitles) CollectFieldNames(IEnumerable<RadzenDataGridColumn<T>> visibleColumns)
+    {
+        return (visibleColumns.Where(x => !String.IsNullOrEmpty(x.Property)).Select(x => x.Property).ToList(), visibleColumns.Where(x => !String.IsNullOrEmpty(x.Property)).Select(x => x.Title).ToList());
+    }
+
+    /// <summary>
+    /// Collects column css date by property name
+    /// </summary>
+    /// <returns></returns>
+    IEnumerable<KeyValuePair<string, string>> GetColumnClasses(IEnumerable<RadzenDataGridColumn<T>> visibleColumns)
+    {
+        return visibleColumns.Where(x => !String.IsNullOrEmpty(x.Property)).Select(x => new KeyValuePair<string, string>(x.Property, x.CssClass == null ? "" : x.CssClass)).ToList();
+    }
+
+    /// <summary>
+    /// Retrieves visible columns
+    /// </summary>
+    /// <returns></returns>
+    IEnumerable<RadzenDataGridColumn<T>> GetVisibleColumns()
+    {
+        var columns = Grid.ColumnsCollection;
+        var visibleColumns = columns.Where(x => x.Visible).ToList();
+
+        if (!String.IsNullOrEmpty(NotExportableClass))
+            visibleColumns = visibleColumns.Where(x => x.CssClass == null || (x.CssClass != null && !x.CssClass.Contains(NotExportableClass))).ToList();
+
+        return visibleColumns;
+    }
+
+    /// <summary>
+    /// Serializes objects 
+    /// </summary>
+    /// <param name=""></param>
+    /// <param name=""></param>
+    /// <returns></returns>
+    string SerializeObjects(IEnumerable<T> obj)
+    {
+        return JsonConvert.SerializeObject(obj, new JsonSerializerSettings() { DateFormatString = DateTimeFormat });
+    }
+
+    /// <summary>
+    /// Computes reference values
+    /// </summary>
+    /// <returns></returns>
+    async Task<IEnumerable<ValueRefObject>> ComputeReferenceValues(IEnumerable<RadzenDataGridColumn<T>> visibleColumns, IEnumerable<T> data)
+    {
+        var res = new List<ValueRefObject>();
+        
+        if (ReferenceValueFieldNames == null ||
+            !ReferenceValueFieldNames.Any())
+            return res;
+
+        foreach(var element in data)
+        {
+            foreach (var fieldName in ReferenceValueFieldNames)
+            {
+                try
+                {
+                    var fieldRefValue = typeof(T).GetProperty(fieldName).GetValue(element);
+                    if (fieldRefValue != null && 
+                        !res.Any(x => x.FieldName == fieldName && x.FieldValue == fieldRefValue.ToString()))
+                    {
+                        var fieldRefValueStr = fieldRefValue.ToString();
+                        var refValue = await ComputeReferenceValue(fieldName, fieldRefValueStr);
+                        if (!String.IsNullOrEmpty(refValue))
+                            res.Add(new ValueRefObject(fieldName, fieldRefValueStr, refValue));
+                    }
+                }
+                catch
+                {
+
+                }
+            }
+        }
+
+        return res;
+    }
+
+    public async Task<string> ComputeReferenceValue(string fieldName, string value)
+    {
+        return HandleReferenceValue != null ? await HandleReferenceValue(fieldName, value) : "";
     }
 }
