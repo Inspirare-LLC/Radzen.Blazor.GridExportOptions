@@ -7,12 +7,14 @@
 
 @if (CsvExport)
 {
-    <RadzenButton Text="@CSVTitle" Click="@(() => ExportToCSV())" Style="@CSVButtonCssStyle" ButtonStyle="@CSVButtonStyle" Size="@CSVButtonSize"/>
+    <RadzenButton Text="@CSVTitle" Click="@(() => ExportToCSV())" Style="@CSVButtonCssStyle" ButtonStyle="@CSVButtonStyle" Size="@CSVButtonSize" />
+    <script id="csvExportContent" type="application/json" suppress-error="BL9992">@_csvExportContentJson</script>
 }
 
 @if (ExcelExport)
 {
     <RadzenButton Text="@ExcelTitle" Click="@(() => ExportToExcel())" Style="@ExcelButtonCssStyle" ButtonStyle="@ExcelButtonStyle" Size="@ExcelButtonSize" />
+    <script id="excelExportContent" type="application/json" suppress-error="BL9992">@_excelExportContentJson</script>
 }
 
 @code{
@@ -72,6 +74,9 @@
     [Parameter]
     public Func<string, string, Task<string>> HandleReferenceValue { get; set; }
 
+    private string _csvExportContentJson;
+    private string _excelExportContentJson;
+
     async void ExportToCSV()
     {
         if (DataSourceMode)
@@ -84,12 +89,14 @@
             var fieldsInfo = CollectFieldNames(visibleColumns);
             var cssClasses = GetColumnClasses(visibleColumns);
             var refValues = await ComputeReferenceValues(visibleColumns, data);
+            _csvExportContentJson = SerializeObjects(data);
+            InvokeAsync(StateHasChanged);
 
-            await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToCSVDataSource", refValues, ReferenceValueFieldNames, SerializeObjects(data), fieldsInfo.fieldNames, fieldsInfo.fieldTitles, cssClasses);
+            await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToCSVDataSource", refValues, ReferenceValueFieldNames, "csvExportContent", fieldsInfo.fieldNames, fieldsInfo.fieldTitles, cssClasses);
         }
         else
         {
-            await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToCSV", GridId, NotExportableClass);
+            await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToCSV", GridId, NotExportableClass, Grid.Template != null);
         }
     }
 
@@ -105,12 +112,15 @@
             var fieldsInfo = CollectFieldNames(visibleColumns);
             var cssClasses = GetColumnClasses(visibleColumns);
             var refValues = await ComputeReferenceValues(visibleColumns, data);
+            _excelExportContentJson = SerializeObjects(data);
 
-            await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToExcelDataSource", refValues, ReferenceValueFieldNames, SerializeObjects(data), fieldsInfo.fieldNames, fieldsInfo.fieldTitles, DateTimeFormat, cssClasses);
+            await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToExcelDataSource", refValues, ReferenceValueFieldNames, "excelExportContent", fieldsInfo.fieldNames, fieldsInfo.fieldTitles, DateTimeFormat, cssClasses);
+
+            _excelExportContentJson = String.Empty;
         }
         else
         {
-            await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToExcel", GridId, NotExportableClass, DateTimeFormat);
+            await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToExcel", GridId, NotExportableClass, DateTimeFormat, Grid.Template != null);
         }
 
     }
@@ -162,7 +172,7 @@
     }
 
     /// <summary>
-    /// Serializes objects 
+    /// Serializes objects
     /// </summary>
     /// <param name=""></param>
     /// <param name=""></param>
@@ -179,19 +189,19 @@
     async Task<IEnumerable<ValueRefObject>> ComputeReferenceValues(IEnumerable<RadzenDataGridColumn<T>> visibleColumns, IEnumerable<T> data)
     {
         var res = new List<ValueRefObject>();
-        
+
         if (ReferenceValueFieldNames == null ||
             !ReferenceValueFieldNames.Any())
             return res;
 
-        foreach(var element in data)
+        foreach (var element in data)
         {
             foreach (var fieldName in ReferenceValueFieldNames)
             {
                 try
                 {
                     var fieldRefValue = typeof(T).GetProperty(fieldName).GetValue(element);
-                    if (fieldRefValue != null && 
+                    if (fieldRefValue != null &&
                         !res.Any(x => x.FieldName == fieldName && x.FieldValue == fieldRefValue.ToString()))
                     {
                         var fieldRefValueStr = fieldRefValue.ToString();

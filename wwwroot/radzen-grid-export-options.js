@@ -1,5 +1,5 @@
 ﻿window.RadzenGridExport = {
-	exportToCSV: function (elementId, notExportableClass) {
+	exportToCSV: function (elementId, notExportableClass, skipFirstColumn) {
 
 		let table = undefined;
 		if (elementId === undefined || elementId === "" || elementId === null)
@@ -11,7 +11,7 @@
 		var headers = RadzenGridExport.collectHeaders(table, true, notExportableClass);
 
 		//Collect data
-		var data = RadzenGridExport.collectData(table, true, false, notExportableClass, false);
+		var data = RadzenGridExport.collectData(table, true, false, notExportableClass, false, '', [], skipFirstColumn);
 		let csvContent = "sep=|" + "\r\n";
 
 		let headerRow = headers.join('|');
@@ -32,7 +32,7 @@
 		link.setAttribute("download", "export.csv");
 		link.click();
 	},
-	exportToCSVDataSource: function (referenceValues, referenceValueFieldNames, dataJSON, fieldNames, fieldTitles, cssClasses) {
+	exportToCSVDataSource: function (referenceValues, referenceValueFieldNames, dataJSONDivId, fieldNames, fieldTitles, cssClasses) {
 
 		//Compute header row
 		var header = fieldTitles.join('|');
@@ -40,7 +40,7 @@
 		csvContent += header + "\r\n";
 
 		//Collect data according to visible and exportable columns
-		var data = RadzenGridExport.collectDataFromDataSourceJSON(referenceValues, referenceValueFieldNames, dataJSON, fieldNames, true, undefined, false, false, cssClasses);
+		var data = RadzenGridExport.collectDataFromDataSourceJSON(referenceValues, referenceValueFieldNames, dataJSONDivId, fieldNames, true, undefined, false, false, cssClasses);
 		 
 		//Loop data and collect fields
 		data.forEach(function (item, index) {
@@ -52,7 +52,7 @@
 		link.setAttribute("download", "export.csv");
 		link.click();
 	},
-	exportToExcel: function (elementId, notExportableClass, dateFormat) {
+	exportToExcel: function (elementId, notExportableClass, dateFormat, skipFirstColumn) {
 		let table = undefined;
 		if (elementId === undefined || elementId === "" || elementId === null)
 			table = $(".rz-data-grid").first();
@@ -64,7 +64,7 @@
 
 		//Collect data
 		var types = [];
-		var data = RadzenGridExport.collectData(table, false, true, notExportableClass, true, dateFormat, types);
+		var data = RadzenGridExport.collectData(table, false, true, notExportableClass, true, dateFormat, types, skipFirstColumn);
 		data = data.filter(x => x.filter(y => y === "").length !== x.length);
 
 		var dataCount = data.length;
@@ -96,11 +96,11 @@
 
 		XLSX.writeFile(wb, 'export.xlsx', { bookType: 'xlsx', type: 'array' })
 	},
-	exportToExcelDataSource: function (referenceValues, referenceValueFieldNames, dataJSON, fieldNames, fieldTitles, dateFormat, cssClasses) {
+	exportToExcelDataSource: function (referenceValues, referenceValueFieldNames, dataJSONDivId, fieldNames, fieldTitles, dateFormat, cssClasses) {
 
 		//Collect data according to visible and exportable columns
 		var types = [];
-		var data = RadzenGridExport.collectDataFromDataSourceJSON(referenceValues, referenceValueFieldNames, dataJSON, fieldNames, false, dateFormat, true, true, cssClasses, types);
+		var data = RadzenGridExport.collectDataFromDataSourceJSON(referenceValues, referenceValueFieldNames, dataJSONDivId, fieldNames, false, dateFormat, true, true, cssClasses, types);
 
 		var dataCount = data.length;
 
@@ -152,7 +152,7 @@
 
 		return headers;
 	},
-	collectData: function (tableRef, quoted, ignoreNumbers, notExportableClass, isExcel, dateFormat, types) {
+	collectData: function (tableRef, quoted, ignoreNumbers, notExportableClass, isExcel, dateFormat, types, skipFirstColumn) {
 		//Collect data
 		var data = [];
 		var tableBodyTable = $("table", tableRef);
@@ -166,6 +166,11 @@
 
 			tds.each(function (index1, element1) {
 				var jqueryElement = $(element1);
+
+				//skip first column, if needed
+				if (skipFirstColumn &&
+					index1 === 0)
+					return;
 
 				//If column is marked as non exportable, skip it.
 				if (notExportableClass && jqueryElement.hasClass(notExportableClass))
@@ -196,8 +201,11 @@
 
 		return data;
 	},
-	collectDataFromDataSourceJSON: function (referenceValues, referenceValueFieldNames, dataJSON, fieldNames, isQuoted, dateFormat, isExcel, ignoreNumbers, cssClasses, types) {
-		//Data is json array
+	collectDataFromDataSourceJSON: function (referenceValues, referenceValueFieldNames, dataJSONDivId, fieldNames, isQuoted, dateFormat, isExcel, ignoreNumbers, cssClasses, types, skipFirstColumn) {
+		//Data is link to div that contains json array
+		var dataJSON = $("#" + dataJSONDivId).text();
+		console.log(dataJSONDivId);
+		console.log(dataJSON);
 		var data = JSON.parse(dataJSON);
 		var dataRows = [];
 		var allTypes = [];
