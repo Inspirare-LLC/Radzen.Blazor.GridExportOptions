@@ -85,7 +85,9 @@
 
 				if (item === "number")
 					cell.z = '0.00';
-				else if (item === "date")
+				else if (item === "date" &&
+						 cell.v !== undefined &&
+						 cell.v !== "")
 					cell.t = 'd';
 				
 			}
@@ -120,7 +122,9 @@
 
 				if (item === "number")
 					cell.z = '0.00';
-				else if (item === "date")
+				else if (item === "date" &&
+						 cell.v !== undefined &&
+						 cell.v !== "")
 					cell.t = 'd';
 
 			}
@@ -162,7 +166,6 @@
 		trs.each(function (index, element) {
 			var tds = $(element).find("td");
 			var row = [];
-			var localTypes = [];
 
 			tds.each(function (index1, element1) {
 				var jqueryElement = $(element1);
@@ -179,7 +182,10 @@
 				var isNumber = ignoreNumbers === true ? false : jqueryElement.hasClass("radzen-blazor-gridexportoptions-column-number");
 				var text = $(".rz-cell-data", jqueryElement).first().text().trim();
 				var type = jqueryElement.hasClass("radzen-blazor-gridexportoptions-column-number") ? "string" : getType(text);
-				localTypes.push(type);
+
+				if (text != undefined &&
+					text != "")
+					allTypes[index1] = type;
 
 				if (text != undefined) {
 					if (type === "date" && isExcel && dateFormat) {
@@ -193,7 +199,6 @@
 			});
 
 			data.push(row);
-			allTypes = localTypes;
 		});
 
 		if (types)
@@ -213,7 +218,6 @@
 		//Loop data and collect fields
 		data.forEach(function (item, index) {
 			var rowData = [];
-			var localTypes = [];
 
 			fieldNames.forEach(function (item2, index2) {
 				var fieldValue = String(item[item2]);
@@ -232,7 +236,10 @@
 
 				var isNumber = ignoreNumbers === true ? false : thisCssClasses.includes("radzen-blazor-gridexportoptions-column-number");
 				var type = thisCssClasses.includes("radzen-blazor-gridexportoptions-column-number") ? "string" : getType(fieldValue);
-				localTypes.push(type);
+
+				if (fieldValue != undefined &&
+					fieldValue != "")
+					allTypes[index2] = type;
 
 				if (type === "date" && isExcel && dateFormat) {
 					var date = luxon.DateTime.fromFormat(fieldValue, dateFormat);
@@ -244,7 +251,6 @@
 			});
 
 			dataRows.push(rowData);
-			allTypes = localTypes;
 		});
 
 		if (types)
@@ -255,6 +261,14 @@
 };
 
 function getType(str) {
+
+	//Short-circuit, if text is empty
+	if (str === undefined ||
+		str === "null" ||
+		str === "null" ||
+		str === "")
+		return "string";
+
 	var numberRegex = new RegExp(/^-?[0-9]+((,|\.)\d+)?$/);
 	var isNumber = numberRegex.test(str);
 	if (isNumber)
