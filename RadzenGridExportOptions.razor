@@ -74,6 +74,9 @@
     [Parameter]
     public Func<string, string, Task<string>> HandleReferenceValue { get; set; }
 
+    [Parameter]
+    public string FileName { get; set; } = "export";
+
     private string _csvExportContentJson;
     private string _excelExportContentJson;
 
@@ -92,7 +95,7 @@
             _csvExportContentJson = SerializeObjects(data);
             InvokeAsync(StateHasChanged);
 
-            await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToCSVDataSource", refValues, ReferenceValueFieldNames, "csvExportContent", fieldsInfo.fieldNames, fieldsInfo.fieldTitles, cssClasses);
+            await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToCSVDataSource", refValues, ReferenceValueFieldNames, "csvExportContent", fieldsInfo.fieldNames, fieldsInfo.fieldTitles, cssClasses, FileName);
         }
         else
         {
@@ -114,7 +117,7 @@
             var refValues = await ComputeReferenceValues(visibleColumns, data);
             _excelExportContentJson = SerializeObjects(data);
 
-            await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToExcelDataSource", refValues, ReferenceValueFieldNames, "excelExportContent", fieldsInfo.fieldNames, fieldsInfo.fieldTitles, DateTimeFormat, cssClasses);
+            await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToExcelDataSource", refValues, ReferenceValueFieldNames, "excelExportContent", fieldsInfo.fieldNames, fieldsInfo.fieldTitles, DateTimeFormat, cssClasses, FileName);
 
             _excelExportContentJson = String.Empty;
         }

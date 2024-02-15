@@ -1,5 +1,5 @@
 ﻿window.RadzenGridExport = {
-	exportToCSV: function (elementId, notExportableClass, skipFirstColumn) {
+	exportToCSV: function (elementId, notExportableClass, skipFirstColumn, fileName) {
 
 		let table = undefined;
 		if (elementId === undefined || elementId === "" || elementId === null)
@@ -32,7 +32,7 @@
 		link.setAttribute("download", "export.csv");
 		link.click();
 	},
-	exportToCSVDataSource: function (referenceValues, referenceValueFieldNames, dataJSONDivId, fieldNames, fieldTitles, cssClasses) {
+	exportToCSVDataSource: function (referenceValues, referenceValueFieldNames, dataJSONDivId, fieldNames, fieldTitles, cssClasses, fileName) {
 
 		//Compute header row
 		var header = fieldTitles.join('|');
@@ -49,10 +49,10 @@
 
 		var link = window.document.createElement("a");
 		link.setAttribute("href", "data:text/csv;charset=utf-8,\uFEFF" + encodeURI(csvContent));
-		link.setAttribute("download", "export.csv");
+		link.setAttribute("download", fileName + ".csv");
 		link.click();
 	},
-	exportToExcel: function (elementId, notExportableClass, dateFormat, skipFirstColumn) {
+	exportToExcel: function (elementId, notExportableClass, dateFormat, skipFirstColumn, fileName) {
 		let table = undefined;
 		if (elementId === undefined || elementId === "" || elementId === null)
 			table = $(".rz-data-grid").first();
@@ -98,7 +98,7 @@
 
 		XLSX.writeFile(wb, 'export.xlsx', { bookType: 'xlsx', type: 'array' })
 	},
-	exportToExcelDataSource: function (referenceValues, referenceValueFieldNames, dataJSONDivId, fieldNames, fieldTitles, dateFormat, cssClasses) {
+	exportToExcelDataSource: function (referenceValues, referenceValueFieldNames, dataJSONDivId, fieldNames, fieldTitles, dateFormat, cssClasses, fileName) {
 
 		//Collect data according to visible and exportable columns
 		var types = [];
@@ -132,8 +132,7 @@
 
 		var wb = XLSX.utils.book_new();
 		XLSX.utils.book_append_sheet(wb, ws, "Export");
-
-		XLSX.writeFile(wb, 'export.xlsx', { bookType: 'xlsx', type: 'array' })
+		XLSX.writeFile(wb, fileName + '.xlsx', { bookType: 'xlsx', type: 'array' })
 	},
 	collectHeaders: function (tableRef, quoted, notExportableClass) {
 		//Collect header columns
