@@ -11,7 +11,7 @@
 		var headers = RadzenGridExport.collectHeaders(table, true, notExportableClass);
 
 		//Collect data
-		var data = RadzenGridExport.collectData(table, true, false, notExportableClass, false, '', [], skipFirstColumn);
+		var data = RadzenGridExport.collectData(table, true, false, notExportableClass, false, '', '', [], skipFirstColumn);
 		let csvContent = "sep=|" + "\r\n";
 
 		let headerRow = headers.join('|');
@@ -40,7 +40,7 @@
 		csvContent += header + "\r\n";
 
 		//Collect data according to visible and exportable columns
-		var data = RadzenGridExport.collectDataFromDataSourceJSON(referenceValues, referenceValueFieldNames, dataJSONDivId, fieldNames, true, undefined, false, false, cssClasses);
+		var data = RadzenGridExport.collectDataFromDataSourceJSON(referenceValues, referenceValueFieldNames, dataJSONDivId, fieldNames, true, undefined, undefined, false, false, cssClasses);
 		 
 		//Loop data and collect fields
 		data.forEach(function (item, index) {
@@ -52,7 +52,7 @@
 		link.setAttribute("download", "export.csv");
 		link.click();
 	},
-	exportToExcel: function (elementId, notExportableClass, dateFormat, skipFirstColumn) {
+	exportToExcel: function (elementId, notExportableClass, dateFormat, dateTimeFormat, skipFirstColumn) {
 		let table = undefined;
 		if (elementId === undefined || elementId === "" || elementId === null)
 			table = $(".rz-data-grid").first();
@@ -64,7 +64,7 @@
 
 		//Collect data
 		var types = [];
-		var data = RadzenGridExport.collectData(table, false, true, notExportableClass, true, dateFormat, types, skipFirstColumn);
+		var data = RadzenGridExport.collectData(table, false, true, notExportableClass, true, dateFormat, dateTimeFormat, types, skipFirstColumn);
 		data = data.filter(x => x.filter(y => y === "").length !== x.length);
 
 		var dataCount = data.length;
@@ -98,11 +98,11 @@
 
 		XLSX.writeFile(wb, 'export.xlsx', { bookType: 'xlsx', type: 'array' })
 	},
-	exportToExcelDataSource: function (referenceValues, referenceValueFieldNames, dataJSONDivId, fieldNames, fieldTitles, dateFormat, cssClasses) {
+	exportToExcelDataSource: function (referenceValues, referenceValueFieldNames, dataJSONDivId, fieldNames, fieldTitles, dateFormat, dateTimeFormat, cssClasses) {
 
 		//Collect data according to visible and exportable columns
 		var types = [];
-		var data = RadzenGridExport.collectDataFromDataSourceJSON(referenceValues, referenceValueFieldNames, dataJSONDivId, fieldNames, false, dateFormat, true, true, cssClasses, types);
+		var data = RadzenGridExport.collectDataFromDataSourceJSON(referenceValues, referenceValueFieldNames, dataJSONDivId, fieldNames, false, dateFormat, dateTimeFormat, true, true, cssClasses, types);
 
 		var dataCount = data.length;
 
@@ -156,7 +156,7 @@
 
 		return headers;
 	},
-	collectData: function (tableRef, quoted, ignoreNumbers, notExportableClass, isExcel, dateFormat, types, skipFirstColumn) {
+	collectData: function (tableRef, quoted, ignoreNumbers, notExportableClass, isExcel, dateFormat, dateTimeFormat, types, skipFirstColumn) {
 		//Collect data
 		var data = [];
 		var tableBodyTable = $("table", tableRef);
@@ -190,6 +190,11 @@
 				if (text != undefined) {
 					if (type === "date" && isExcel && dateFormat) {
 						var date = luxon.DateTime.fromFormat(text, dateFormat);
+						if (date === null ||
+							date.invalid !== null) {
+							date = luxon.DateTime.fromFormat(text, dateTimeFormat);
+						}
+
 						row.push(date.toISO());
 					} else {
 						var numberParse = type === "number" ? parseFloat(text.replace(",", ".")) : null;
@@ -206,7 +211,7 @@
 
 		return data;
 	},
-	collectDataFromDataSourceJSON: function (referenceValues, referenceValueFieldNames, dataJSONDivId, fieldNames, isQuoted, dateFormat, isExcel, ignoreNumbers, cssClasses, types, skipFirstColumn) {
+	collectDataFromDataSourceJSON: function (referenceValues, referenceValueFieldNames, dataJSONDivId, fieldNames, isQuoted, dateFormat, dateTimeFormat, isExcel, ignoreNumbers, cssClasses, types, skipFirstColumn) {
 		//Data is link to div that contains json array
 		var dataJSON = $("#" + dataJSONDivId).text();
 		console.log(dataJSONDivId);
@@ -243,6 +248,11 @@
 
 				if (type === "date" && isExcel && dateFormat) {
 					var date = luxon.DateTime.fromFormat(fieldValue, dateFormat);
+					if (date === null ||
+						date.invalid !== null) {
+						date = luxon.DateTime.fromFormat(text, dateTimeFormat);
+					}
+
 					rowData.push(date.toISO());
 				} else {
 					var numberParse = type === "number" ? parseFloat(fieldValue.replace(",", ".")) : null;

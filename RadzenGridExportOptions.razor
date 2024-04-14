@@ -61,6 +61,9 @@
     [Parameter]
     public string DateTimeFormat { get; set; } = "yyyy-MM-dd";
 
+    [Parameter]
+    public string DateAndTimeFormat { get; set; } = "yyyy-MM-dd hh:mm:ss";
+
     //Data source mode
     [Parameter]
     public bool DataSourceMode { get; set; }
@@ -114,13 +117,13 @@
             var refValues = await ComputeReferenceValues(visibleColumns, data);
             _excelExportContentJson = SerializeObjects(data);
 
-            await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToExcelDataSource", refValues, ReferenceValueFieldNames, "excelExportContent", fieldsInfo.fieldNames, fieldsInfo.fieldTitles, DateTimeFormat, cssClasses);
+            await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToExcelDataSource", refValues, ReferenceValueFieldNames, "excelExportContent", fieldsInfo.fieldNames, fieldsInfo.fieldTitles, DateTimeFormat, DateAndTimeFormat, cssClasses);
 
             _excelExportContentJson = String.Empty;
         }
         else
         {
-            await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToExcel", GridId, NotExportableClass, DateTimeFormat, Grid.Template != null);
+            await _jsRuntime.InvokeVoidAsync("RadzenGridExport.exportToExcel", GridId, NotExportableClass, DateTimeFormat, DateAndTimeFormat, Grid.Template != null);
         }
 
     }
