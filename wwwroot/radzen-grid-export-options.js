@@ -111,20 +111,19 @@
 		ws['!autofilter'] = { ref: "A1:XX1" };
 
 		//Update column types
+		var dateFmt = toExcelFormat(dateFormat, "yyyy-mm-dd");
+		var dateTimeFmt = toExcelFormat(dateTimeFormat, "yyyy-mm-dd hh:mm");
+
 		types.forEach(function (item, index) {
-			for (var r = 1; r <= dataCount + 1; r++) {
-				var cellRef = XLSX.utils.encode_cell({ c: index, r: r });
-				var cell = ws[cellRef];
+			for (var r = 1; r <= dataCount; r++) {
+				var cell = ws[XLSX.utils.encode_cell({ c: index, r: r })];
 				if (!cell)
 					continue;
 
 				if (item === "number")
 					cell.z = '0.00';
-				else if (item === "date" &&
-						 cell.v !== undefined &&
-						 cell.v !== "")
-					cell.t = 'd';
-
+				else if (item === "date" && typeof cell.v === "number")
+					cell.z = (cell.v % 1) !== 0 ? dateTimeFmt : dateFmt;
 			}
 		});
 
@@ -187,13 +186,8 @@
 
 				if (text != undefined) {
 					if (type === "date" && isExcel && dateFormat) {
-						var date = luxon.DateTime.fromFormat(text, dateFormat);
-						if (date === null ||
-							date.invalid !== null) {
-							date = luxon.DateTime.fromFormat(text, dateTimeFormat);
-						}
-
-						row.push(date.toISO());
+						var dt = parseGridDate(text, dateFormat, dateTimeFormat);
+						row.push(dt ? toExcelSerial(dt) : text);   // unparsable -> keep the original text
 					} else {
 						var numberParse = type === "number" ? parseFloat(text.replace(",", ".")) : null;
 						row.push(quoted === true ? (isNumber === true && text != "" ? "=" + "\"" + text + "\"" : "\"" + text + "\"") : (isNumber === true && text != "" ? "=" + text : (numberParse != null ? numberParse : text)));
@@ -242,18 +236,9 @@
 					fieldValue != "")
 					allTypes[index2] = type;
 
-				//if (type === "date" && isExcel && dateFormat) {
-				//	var date = luxon.DateTime.fromFormat(fieldValue, dateFormat);
-				//	if (date === null ||
-				//		date.invalid !== null) {
-				//		date = luxon.DateTime.fromFormat(text, dateTimeFormat);
-				//	}
-
-				//	rowData.push(date.toISO());
-				//}
 				if (type === "date" && isExcel && dateFormat) {
-					var dt = parseGridDate(text, dateFormat, dateTimeFormat);
-					row.push(dt ? toExcelSerial(dt) : text);   // unparsable -> keep the original text
+					var dt = parseDataSourceDate(fieldValue, dateFormat, dateTimeFormat);
+					rowData.push(dt ? toExcelSerial(dt) : fieldValue);   // unparsable -> keep the original text
 				}
 				else
 				{
@@ -314,4 +299,12 @@ function parseGridDate(text, dateFormat, dateTimeFormat) {
 function toExcelFormat(pattern, fallback) {
 	if (!pattern) return fallback;
 	return pattern.replace(/M/g, "m").replace(/H/g, "h").replace(/tt/g, "AM/PM");
+}
+
+// For data-source cells: values arrive as raw ISO from the JSON payload,
+// not formatted in the consumer's culture.
+function parseDataSourceDate(value, dateFormat, dateTimeFormat) {
+	var dt = luxon.DateTime.fromISO(value, { setZone: true });
+	if (!dt.isValid) dt = parseGridDate(value, dateFormat, dateTimeFormat);
+	return dt.isValid ? dt : null;
 }
