@@ -76,20 +76,18 @@
 		ws['!autofilter'] = { ref: "A1:XX1" };
 
 		//Update column types
+		var dateFmt = toExcelFormat(dateFormat, "yyyy-mm-dd");
+		var dateTimeFmt = toExcelFormat(dateTimeFormat, "yyyy-mm-dd hh:mm");
+
 		types.forEach(function (item, index) {
-			for (var r = 1; r <= dataCount + 1; r++) {
-				var cellRef = XLSX.utils.encode_cell({ c: index, r: r });
-				var cell = ws[cellRef];
-				if (!cell)
-					continue;
+			for (var r = 1; r <= dataCount; r++) {
+				var cell = ws[XLSX.utils.encode_cell({ c: index, r: r })];
+				if (!cell) continue;
 
 				if (item === "number")
 					cell.z = '0.00';
-				else if (item === "date" &&
-						 cell.v !== undefined &&
-						 cell.v !== "")
-					cell.t = 'd';
-				
+				else if (item === "date" && typeof cell.v === "number")
+					cell.z = (cell.v % 1) !== 0 ? dateTimeFmt : dateFmt;
 			}
 		});
 
@@ -214,8 +212,6 @@
 	collectDataFromDataSourceJSON: function (referenceValues, referenceValueFieldNames, dataJSONDivId, fieldNames, isQuoted, dateFormat, dateTimeFormat, isExcel, ignoreNumbers, cssClasses, types, skipFirstColumn) {
 		//Data is link to div that contains json array
 		var dataJSON = $("#" + dataJSONDivId).text();
-		console.log(dataJSONDivId);
-		console.log(dataJSON);
 		var data = JSON.parse(dataJSON);
 		var dataRows = [];
 		var allTypes = [];
@@ -246,15 +242,21 @@
 					fieldValue != "")
 					allTypes[index2] = type;
 
-				if (type === "date" && isExcel && dateFormat) {
-					var date = luxon.DateTime.fromFormat(fieldValue, dateFormat);
-					if (date === null ||
-						date.invalid !== null) {
-						date = luxon.DateTime.fromFormat(text, dateTimeFormat);
-					}
+				//if (type === "date" && isExcel && dateFormat) {
+				//	var date = luxon.DateTime.fromFormat(fieldValue, dateFormat);
+				//	if (date === null ||
+				//		date.invalid !== null) {
+				//		date = luxon.DateTime.fromFormat(text, dateTimeFormat);
+				//	}
 
-					rowData.push(date.toISO());
-				} else {
+				//	rowData.push(date.toISO());
+				//}
+				if (type === "date" && isExcel && dateFormat) {
+					var dt = parseGridDate(text, dateFormat, dateTimeFormat);
+					row.push(dt ? toExcelSerial(dt) : text);   // unparsable -> keep the original text
+				}
+				else
+				{
 					var numberParse = type === "number" ? parseFloat(fieldValue.replace(",", ".")) : null;
 					rowData.push(isQuoted === true ? (isNumber === true && fieldValue != "" ? "=" + "\"" + fieldValue + "\"" : "\"" + fieldValue + "\"") : (isNumber === true && fieldValue != "" ? "=" + fieldValue : (numberParse != null ? numberParse : fieldValue)));
 				}
@@ -291,4 +293,25 @@ function getType(str) {
 		return "date";
 
 	return "string";
+}
+
+var EXCEL_EPOCH = Date.UTC(1899, 11, 30);
+
+// luxon DateTime -> Excel serial, from wall-clock parts only.
+// Date.UTC() is absolute, so no local timezone data is consulted.
+function toExcelSerial(dt) {
+	var days = (Date.UTC(dt.year, dt.month - 1, dt.day) - EXCEL_EPOCH) / 86400000;
+	return days + (dt.hour * 3600 + dt.minute * 60 + dt.second) / 86400;
+}
+
+function parseGridDate(text, dateFormat, dateTimeFormat) {
+	var dt = luxon.DateTime.fromFormat(text, dateFormat);
+	if (!dt.isValid && dateTimeFormat) dt = luxon.DateTime.fromFormat(text, dateTimeFormat);
+	return dt.isValid ? dt : null;
+}
+
+// .NET / luxon pattern -> Excel number format
+function toExcelFormat(pattern, fallback) {
+	if (!pattern) return fallback;
+	return pattern.replace(/M/g, "m").replace(/H/g, "h").replace(/tt/g, "AM/PM");
 }
